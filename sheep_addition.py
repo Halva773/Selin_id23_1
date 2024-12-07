@@ -5,6 +5,9 @@ from random import random
 from PyQt6.QtCore import QTimer, Qt
 from PyQt6.QtGui import QPainter, QBrush, QColor, QMouseEvent
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QSlider, QLabel, QHBoxLayout
+from PyQt6.QtWidgets import QDialog, QFormLayout, QSpinBox
+
+
 # Анимация поедания
 # Редактировние стад
 
@@ -71,6 +74,11 @@ class CircleAnimation(QWidget):
     def mousePressEvent(self, event: QMouseEvent):
         if event.button() == Qt.MouseButton.LeftButton:
             x, y = event.position().x(), event.position().y()
+            for sheep in self.sheeps:
+                distance = math.sqrt((sheep.x - x) ** 2 + (sheep.y - y) ** 2)
+                if distance <= sheep.size:  # Проверяем попадание клика в овцу
+                    self.edit_sheep(sheep)
+                    return
             self.cabbages.append(Cabbage(self.radius, [x, y], generate_coords=False))
             self.update()
 
@@ -105,7 +113,6 @@ class CircleAnimation(QWidget):
                 if distance < min_distance:
                     min_distance = distance
                     nearest_cabbage = cabbage
-
         return nearest_cabbage
 
     def paintEvent(self, event, **kwargs):
@@ -137,7 +144,7 @@ class CircleAnimation(QWidget):
                 Sheep.SHEEP_COUNT -= 1
                 if Sheep.SHEEP_COUNT == 0:
                     print("All sheep dead. Unlucky :(")
-                    sys.exit(app.exec())
+                    # sys.exit(app.exec())
             else:
                 sheep_x = sheep.x
                 sheep_y = sheep.y
@@ -174,6 +181,44 @@ class CircleAnimation(QWidget):
                 sheep.x += sheep.speed * (dx / distance)
                 sheep.y += sheep.speed * (dy / distance)
         return distance_list
+
+    def edit_sheep(self, sheep):
+
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Редактирование овцы")
+        layout = QFormLayout(dialog)
+
+        speed_spin = QSpinBox(dialog)
+        speed_spin.setValue(int(sheep.speed * 100))
+        layout.addRow("Скорость", speed_spin)
+
+        eat_speed_spin = QSpinBox(dialog)
+        eat_speed_spin.setValue(int(sheep.eat_speed * 33))
+        layout.addRow("Скорость поедания", eat_speed_spin)
+
+        hungry_spin = QSpinBox(dialog)
+        hungry_spin.setValue(int(sheep.hungry / 12))
+        layout.addRow("Голод", hungry_spin)
+
+        reproduction_spin = QSpinBox(dialog)
+        reproduction_spin.setValue(int(sheep.reproduction_threshold / 24))
+        layout.addRow("Плодовитость", reproduction_spin)
+
+        ok_button = QPushButton("Применить", dialog)
+        ok_button.clicked.connect(
+            lambda: self.apply_sheep_settings(dialog, sheep, speed_spin, eat_speed_spin, hungry_spin,
+                                              reproduction_spin))
+        layout.addWidget(ok_button)
+        dialog.setLayout(layout)
+        dialog.exec()
+
+    def apply_sheep_settings(self, dialog, sheep, speed_spin, eat_speed_spin, hungry_spin, reproduction_spin):
+        sheep.speed = speed_spin.value() / 100  # mean value: 0.5
+        sheep.eat_speed = eat_speed_spin.value() / 33  # mean value: 1.5
+        sheep.hungry = hungry_spin.value() * 15  # mean value: 600
+        sheep.size = int(hungry_spin.value() * 12 / 40)
+        sheep.reproduction_threshold = reproduction_spin.value() * 24  # mean value: 1200
+        dialog.accept()
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Up:
