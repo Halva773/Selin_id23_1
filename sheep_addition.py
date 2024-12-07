@@ -5,7 +5,8 @@ from random import random
 from PyQt6.QtCore import QTimer, Qt
 from PyQt6.QtGui import QPainter, QBrush, QColor, QMouseEvent
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QSlider, QLabel, QHBoxLayout
-
+# Анимация поедания
+# Редактировние стад
 
 class CircleAnimation(QWidget):
     def __init__(self):
@@ -16,6 +17,7 @@ class CircleAnimation(QWidget):
         self.center_x = (self.width() - 300) // 2
         self.center_y = self.height() // 2
         self.speed = 2  # скорость анимации
+        self.pause = False
 
         self.cabbages = [Cabbage(self.radius, [self.center_x, self.center_y]) for _ in range(5)]
         self.sheeps = [Sheep(20, [self.center_x, self.center_y])]
@@ -63,10 +65,8 @@ class CircleAnimation(QWidget):
         return slider
 
     def update_position(self):
-        # if not self.purpose_cabbage.exist:
-        #     self.purpose_cabbage.generate_coords()
-        #     self.purpose_cabbage.exist = True
-        self.update()
+        if not self.pause:
+            self.update()
 
     def mousePressEvent(self, event: QMouseEvent):
         if event.button() == Qt.MouseButton.LeftButton:
@@ -181,6 +181,8 @@ class CircleAnimation(QWidget):
         if event.key() == Qt.Key.Key_Down:
             cords = [self.sheeps[-1].x, self.sheeps[-1].y]
             self.sheeps.append(Sheep(20, cords))
+        if event.key() == Qt.Key.Key_P:
+            self.pause = not self.pause
 
 
 class Cabbage:
