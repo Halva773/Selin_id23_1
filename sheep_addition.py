@@ -9,7 +9,6 @@ from PyQt6.QtWidgets import QDialog, QFormLayout, QSpinBox
 
 
 # Анимация поедания
-# Редактировние стад
 
 class CircleAnimation(QWidget):
     def __init__(self):
@@ -166,8 +165,25 @@ class CircleAnimation(QWidget):
                         sheep.size += 10
                     sheep.hungry -= 300
 
-                painter.setBrush(QBrush(QColor(0, 0, 0), Qt.BrushStyle.SolidPattern))
-                painter.drawEllipse(int(sheep_x - 5), int(sheep_y - 5), sheep.size, sheep.size)
+                if id < len(distances) and distances[id] < 20:
+                    sheep.hungry += sheep.eat_speed
+                    self.purpose_cabbage.value -= sheep.eat_speed
+                    if self.purpose_cabbage.value <= 0:
+                        self.cabbages.remove(self.purpose_cabbage)
+                        self.purpose_cabbage = self.add_cabbage()
+                        self.cabbages.append(self.purpose_cabbage)
+                    # Рисуем полукруг для овцы и капусты
+                    painter.setBrush(QBrush(QColor(0, 0, 0), Qt.BrushStyle.SolidPattern))
+                    painter.drawPie(int(sheep_x - sheep.size / 2), int(sheep_y - sheep.size / 2),
+                                    sheep.size, sheep.size, 0, 180 * 16)
+                    painter.setBrush(QBrush(QColor(0, 255, 0), Qt.BrushStyle.SolidPattern))
+                    painter.drawPie(int(self.purpose_cabbage.x - self.purpose_cabbage.size / 2),
+                                    int(self.purpose_cabbage.y - self.purpose_cabbage.size / 2),
+                                    int(self.purpose_cabbage.size), int(self.purpose_cabbage.size), 180 * 16, 180 * 16)
+                else:
+                    # Обычное отображение овцы
+                    painter.setBrush(QBrush(QColor(0, 0, 0), Qt.BrushStyle.SolidPattern))
+                    painter.drawEllipse(int(sheep_x - 5), int(sheep_y - 5), sheep.size, sheep.size)
 
     def sheeps_going(self):
         distance_list = []
@@ -201,7 +217,7 @@ class CircleAnimation(QWidget):
         layout.addRow("Голод", hungry_spin)
 
         reproduction_spin = QSpinBox(dialog)
-        reproduction_spin.setValue(int(sheep.reproduction_threshold / 24))
+        reproduction_spin.setValue(int(sheep.breeding / 24))
         layout.addRow("Плодовитость", reproduction_spin)
 
         ok_button = QPushButton("Применить", dialog)
@@ -217,7 +233,7 @@ class CircleAnimation(QWidget):
         sheep.eat_speed = eat_speed_spin.value() / 33  # mean value: 1.5
         sheep.hungry = hungry_spin.value() * 15  # mean value: 600
         sheep.size = int(hungry_spin.value() * 12 / 40)
-        sheep.reproduction_threshold = reproduction_spin.value() * 24  # mean value: 1200
+        sheep.breeding = reproduction_spin.value() * 24  # mean value: 1200
         dialog.accept()
 
     def keyPressEvent(self, event):
